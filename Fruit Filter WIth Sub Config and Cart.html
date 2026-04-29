@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fruit Market</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #f5f0e8;
+      --surface:      #fffdf8;
+      --border:       #ddd8ce;
+      --text:         #1a1714;
+      --muted:        #8a8278;
+      --accent:       #c84b2f;
+      --accent-bg:    #fdf0ed;
+      --tag-bg:       #edeae3;
+      --tag-text:     #5a5650;
+      --radius:       10px;
+      --sidebar-w:    220px;
+      --drawer-w:     340px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .topbar-left p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Cart button in topbar */
+    #cart-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      background: var(--text);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+
+    #cart-btn:hover { opacity: 0.85; }
+
+    #cart-count {
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 1px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* ── Main layout ── */
+    .layout {
+      display: flex;
+      align-items: flex-start;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      position: sticky;
+      top: 5rem;
+    }
+
+    .filter-section { margin-bottom: 1.5rem; }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    #fruit-select {
+      width: 100%;
+      padding: 9px 30px 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238a8278' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.15s;
+    }
+
+    #fruit-select:focus { border-color: var(--accent); }
+
+    .checkbox-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.15s;
+    }
+
+    .checkbox-item.disabled { opacity: 0.35; pointer-events: none; }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checkbox-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--tag-bg);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    #clear-btn {
+      width: 100%;
+      padding: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    #clear-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    .filter-divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+
+    /* ── Catalog ── */
+    .catalog { flex: 1; min-width: 0; }
+
+    .catalog-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      min-height: 18px;
+    }
+
+    #fruit-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .fruit-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      animation: fadeIn 0.18s ease;
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    .fruit-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(200,75,47,0.08);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .emoji { font-size: 26px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+    .fruit-info { min-width: 0; }
+
+    .fruit-name { font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+    }
+
+    .tag.matched {
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .card-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    #empty {
+      display: none;
+      padding: 3rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    /* ── Variant panel overlay ── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,23,20,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .overlay.open { display: flex; }
+
+    .variant-panel {
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      width: 420px;
+      max-width: calc(100vw - 2rem);
+      padding: 2rem;
+      position: relative;
+      animation: panelIn 0.2s ease;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .panel-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--tag-bg);
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+    }
+
+    .panel-close:hover { background: var(--accent-bg); color: var(--accent); }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-emoji { font-size: 40px; line-height: 1; }
+
+    .panel-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .panel-producer { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .panel-section { margin-bottom: 1.25rem; }
+
+    .panel-section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Variant color/size buttons */
+    .variant-options { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .variant-btn {
+      padding: 6px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border: 1.5px solid transparent;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, color 0.12s;
+    }
+
+    .variant-btn:hover { border-color: var(--border); }
+
+    .variant-btn.selected {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Quantity stepper */
+    .qty-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--tag-bg);
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .qty-btn:hover { background: var(--border); }
+
+    #qty-display {
+      width: 48px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      height: 36px;
+      line-height: 36px;
+      background: var(--surface);
+    }
+
+    /* Price display */
+    .panel-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .panel-price-note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Add to cart button */
+    #add-to-cart-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: opacity 0.15s;
+    }
+
+    #add-to-cart-btn:hover { opacity: 0.88; }
+    #add-to-cart-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Cart drawer ── */
+    .cart-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26,23,20,0.3);
+      z-index: 300;
+    }
+
+    .cart-overlay.open { display: block; }
+
+    .cart-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--drawer-w);
+      max-width: 100vw;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 301;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+    }
+
+    .cart-overlay.open .cart-drawer { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .drawer-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .drawer-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--tag-bg);
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s;
+    }
+
+    .drawer-close:hover { background: var(--accent-bg); color: var(--accent); }
+
+    .drawer-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.5rem;
+    }
+
+    .drawer-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 3rem 0;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn 0.15s ease;
+    }
+
+    .cart-item:last-child { border-bottom: none; }
+
+    .cart-item-emoji { font-size: 22px; flex-shrink: 0; }
+
+    .cart-item-info { flex: 1; min-width: 0; }
+
+    .cart-item-name { font-size: 13px; font-weight: 500; }
+
+    .cart-item-variant { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    .cart-item-right { text-align: right; flex-shrink: 0; }
+
+    .cart-item-price { font-size: 13px; font-weight: 500; }
+
+    .cart-item-qty { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.12s;
+      flex-shrink: 0;
+    }
+
+    .cart-item-remove:hover { color: var(--accent); }
+
+    .drawer-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .drawer-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+    }
+
+    .drawer-total-label { font-size: 13px; color: var(--muted); }
+
+    .drawer-total-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--text);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .checkout-btn:hover { opacity: 0.85; }
+    .checkout-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Top bar ── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Fruit Market</h1>
+      <p>Click any fruit to configure and add to cart.</p>
+    </div>
+    <button id="cart-btn">
+      Cart
+      <span id="cart-count">0</span>
+    </button>
+  </header>
+
+  <!-- ── Main layout ── -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="filter-section">
+        <label class="filter-label" for="fruit-select">Fruit</label>
+        <select id="fruit-select">
+          <option value="">All fruits</option>
+        </select>
+      </div>
+      <hr class="filter-divider" />
+      <div class="filter-section">
+        <span class="filter-label">Color</span>
+        <div class="checkbox-group" id="filter-color"></div>
+      </div>
+      <hr class="filter-divider" />
+      <div class="filter-section">
+        <span class="filter-label">Flavor</span>
+        <div class="checkbox-group" id="filter-flavor"></div>
+      </div>
+      <hr class="filter-divider" />
+      <div class="filter-section">
+        <span class="filter-label">Texture</span>
+        <div class="checkbox-group" id="filter-texture"></div>
+      </div>
+      <hr class="filter-divider" />
+      <div class="filter-section">
+        <span class="filter-label">Season</span>
+        <div class="checkbox-group" id="filter-season"></div>
+      </div>
+      <button id="clear-btn">Clear all filters</button>
+    </aside>
+
+    <!-- Catalog -->
+    <main class="catalog">
+      <div class="catalog-meta" id="meta"></div>
+      <div id="fruit-list"></div>
+      <div id="empty">No fruits match your filters.</div>
+    </main>
+
+  </div>
+
+  <!-- ── Variant panel overlay ── -->
+  <div class="overlay" id="variant-overlay">
+    <div class="variant-panel" id="variant-panel">
+      <button class="panel-close" id="panel-close">&#x2715;</button>
+
+      <div class="panel-header">
+        <span class="panel-emoji" id="panel-emoji"></span>
+        <div>
+          <div class="panel-title" id="panel-title"></div>
+          <div class="panel-producer" id="panel-producer"></div>
+        </div>
+      </div>
+
+      <div class="panel-section" id="color-section">
+        <span class="panel-section-label">Color</span>
+        <div class="variant-options" id="panel-colors"></div>
+      </div>
+
+      <div class="panel-section">
+        <span class="panel-section-label">Size</span>
+        <div class="variant-options" id="panel-sizes"></div>
+      </div>
+
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div class="panel-section" style="margin-bottom:0;">
+          <span class="panel-section-label">Quantity</span>
+          <div class="qty-stepper">
+            <button class="qty-btn" id="qty-minus">&#x2212;</button>
+            <div id="qty-display">1</div>
+            <button class="qty-btn" id="qty-plus">&#x2b;</button>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="panel-price" id="panel-price"></div>
+          <div class="panel-price-note" id="panel-price-note"></div>
+        </div>
+      </div>
+
+      <button id="add-to-cart-btn">Add to cart</button>
+    </div>
+  </div>
+
+  <!-- ── Cart drawer ── -->
+  <div class="cart-overlay" id="cart-overlay">
+    <div class="cart-drawer" id="cart-drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Your cart</span>
+        <button class="drawer-close" id="drawer-close">&#x2715;</button>
+      </div>
+      <div class="drawer-items" id="drawer-items">
+        <div class="drawer-empty">Your cart is empty.</div>
+      </div>
+      <div class="drawer-footer">
+        <div class="drawer-total">
+          <span class="drawer-total-label">Total</span>
+          <span class="drawer-total-value" id="drawer-total">$0.00</span>
+        </div>
+        <button class="checkout-btn" id="checkout-btn" disabled>Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    // DATA
+    //
+    // Each fruit now has:
+    //   - Named tag categories for filtering
+    //   - variants: which color options exist
+    //   - sizes: available size options
+    //   - pricing: a map of "color-size" -> price
+    //     Any combo not listed falls back to base price
+    //   - producer: shown in the variant panel
+    // ─────────────────────────────────────────────
+    const fruits = [
+      {
+        name: 'Apple', emoji: '🍎',
+        producer: 'Orchard Valley Farms',
+        colors: ['red','green'], flavors: ['sweet'], textures: ['crunchy'], seasons: ['fall'],
+        variants: ['red','green','yellow'],
+        sizes:    ['small bag','large bag'],
+        pricing:  { 'red-small bag':2.99,'red-large bag':4.99,'green-small bag':2.79,'green-large bag':4.79,'yellow-small bag':3.29,'yellow-large bag':5.29 },
+      },
+      {
+        name: 'Avocado', emoji: '🥑',
+        producer: 'Suncoast Groves',
+        colors: ['green'], flavors: ['savory','creamy'], textures: ['creamy'], seasons: ['year-round'],
+        variants: ['hass','florida'],
+        sizes:    ['single','pack of 3'],
+        pricing:  { 'hass-single':1.49,'hass-pack of 3':3.99,'florida-single':1.79,'florida-pack of 3':4.79 },
+      },
+      {
+        name: 'Banana', emoji: '🍌',
+        producer: 'Tropical Imports Co.',
+        colors: ['yellow'], flavors: ['sweet'], textures: ['soft'], seasons: ['year-round'],
+        variants: ['conventional','organic'],
+        sizes:    ['single','bunch'],
+        pricing:  { 'conventional-single':0.29,'conventional-bunch':1.49,'organic-single':0.49,'organic-bunch':2.49 },
+      },
+      {
+        name: 'Blueberry', emoji: '🫐',
+        producer: 'Blue Ridge Berry Co.',
+        colors: ['blue','purple'], flavors: ['sweet','tangy'], textures: ['soft'], seasons: ['summer'],
+        variants: ['wild','cultivated'],
+        sizes:    ['half pint','pint'],
+        pricing:  { 'wild-half pint':3.49,'wild-pint':5.99,'cultivated-half pint':2.49,'cultivated-pint':3.99 },
+      },
+      {
+        name: 'Cherry', emoji: '🍒',
+        producer: 'Pacific Northwest Orchards',
+        colors: ['red'], flavors: ['sweet'], textures: ['firm'], seasons: ['summer'],
+        variants: ['bing','rainier','montmorency'],
+        sizes:    ['half pound','one pound'],
+        pricing:  { 'bing-half pound':3.99,'bing-one pound':6.99,'rainier-half pound':4.99,'rainier-one pound':8.99,'montmorency-half pound':3.49,'montmorency-one pound':5.99 },
+      },
+      {
+        name: 'Grape', emoji: '🍇',
+        producer: 'Vineyard Select',
+        colors: ['purple','green','red'], flavors: ['sweet','tangy'], textures: ['juicy'], seasons: ['fall'],
+        variants: ['red','green','purple','cotton candy'],
+        sizes:    ['half pound','one pound'],
+        pricing:  { 'red-half pound':2.49,'red-one pound':3.99,'green-half pound':2.49,'green-one pound':3.99,'purple-half pound':2.99,'purple-one pound':4.99,'cotton candy-half pound':3.99,'cotton candy-one pound':6.99 },
+      },
+      {
+        name: 'Kiwi', emoji: '🥝',
+        producer: 'Southern Hemisphere Exports',
+        colors: ['green'], flavors: ['tangy','sweet'], textures: ['soft'], seasons: ['winter'],
+        variants: ['green','gold'],
+        sizes:    ['single','pack of 4'],
+        pricing:  { 'green-single':0.99,'green-pack of 4':3.49,'gold-single':1.29,'gold-pack of 4':4.49 },
+      },
+      {
+        name: 'Lemon', emoji: '🍋',
+        producer: 'Citrus Sun Farms',
+        colors: ['yellow'], flavors: ['sour','citrus'], textures: ['firm'], seasons: ['year-round'],
+        variants: ['eureka','meyer'],
+        sizes:    ['single','bag of 5'],
+        pricing:  { 'eureka-single':0.79,'eureka-bag of 5':2.99,'meyer-single':0.99,'meyer-bag of 5':3.99 },
+      },
+      {
+        name: 'Mango', emoji: '🥭',
+        producer: 'Tropical Imports Co.',
+        colors: ['orange','yellow'], flavors: ['sweet'], textures: ['juicy','soft'], seasons: ['summer'],
+        variants: ['ataulfo','kent','tommy atkins'],
+        sizes:    ['single','box of 6'],
+        pricing:  { 'ataulfo-single':1.49,'ataulfo-box of 6':7.99,'kent-single':1.99,'kent-box of 6':10.99,'tommy atkins-single':1.29,'tommy atkins-box of 6':6.99 },
+      },
+      {
+        name: 'Orange', emoji: '🍊',
+        producer: 'Citrus Sun Farms',
+        colors: ['orange'], flavors: ['sweet','citrus'], textures: ['juicy'], seasons: ['winter'],
+        variants: ['navel','blood','valencia','cara cara'],
+        sizes:    ['single','bag of 6'],
+        pricing:  { 'navel-single':0.99,'navel-bag of 6':4.49,'blood-single':1.29,'blood-bag of 6':5.99,'valencia-single':0.89,'valencia-bag of 6':3.99,'cara cara-single':1.19,'cara cara-bag of 6':5.49 },
+      },
+      {
+        name: 'Peach', emoji: '🍑',
+        producer: 'Georgia Heritage Farms',
+        colors: ['orange','yellow'], flavors: ['sweet'], textures: ['soft','fuzzy'], seasons: ['summer'],
+        variants: ['white','yellow','donut'],
+        sizes:    ['single','half dozen'],
+        pricing:  { 'white-single':1.49,'white-half dozen':7.99,'yellow-single':1.29,'yellow-half dozen':6.99,'donut-single':1.69,'donut-half dozen':8.99 },
+      },
+      {
+        name: 'Pear', emoji: '🍐',
+        producer: 'Cascade River Orchards',
+        colors: ['green','yellow'], flavors: ['sweet','mild'], textures: ['soft','grainy'], seasons: ['fall'],
+        variants: ['bartlett','bosc','anjou','asian'],
+        sizes:    ['single','bag of 4'],
+        pricing:  { 'bartlett-single':0.99,'bartlett-bag of 4':3.49,'bosc-single':1.09,'bosc-bag of 4':3.79,'anjou-single':0.99,'anjou-bag of 4':3.49,'asian-single':1.49,'asian-bag of 4':4.99 },
+      },
+      {
+        name: 'Pineapple', emoji: '🍍',
+        producer: 'Tropical Imports Co.',
+        colors: ['yellow'], flavors: ['sweet','tangy'], textures: ['firm','juicy'], seasons: ['year-round'],
+        variants: ['whole','mini','gold'],
+        sizes:    ['single'],
+        pricing:  { 'whole-single':3.49,'mini-single':2.49,'gold-single':4.99 },
+      },
+      {
+        name: 'Raspberry', emoji: '🩷',
+        producer: 'Blue Ridge Berry Co.',
+        colors: ['red'], flavors: ['tangy','sweet'], textures: ['soft','seedy'], seasons: ['summer'],
+        variants: ['red','golden','black'],
+        sizes:    ['half pint','pint'],
+        pricing:  { 'red-half pint':2.99,'red-pint':4.99,'golden-half pint':3.49,'golden-pint':5.99,'black-half pint':3.99,'black-pint':6.99 },
+      },
+      {
+        name: 'Strawberry', emoji: '🍓',
+        producer: 'Coastal Berry Farms',
+        colors: ['red'], flavors: ['sweet','tangy'], textures: ['soft','juicy'], seasons: ['spring','summer'],
+        variants: ['conventional','organic'],
+        sizes:    ['pint','quart'],
+        pricing:  { 'conventional-pint':2.99,'conventional-quart':4.99,'organic-pint':3.99,'organic-quart':6.99 },
+      },
+      {
+        name: 'Watermelon', emoji: '🍉',
+        producer: 'Southern Sun Farms',
+        colors: ['red','green'], flavors: ['sweet'], textures: ['juicy','crunchy'], seasons: ['summer'],
+        variants: ['seedless','seeded','mini'],
+        sizes:    ['whole','cut half'],
+        pricing:  { 'seedless-whole':7.99,'seedless-cut half':4.49,'seeded-whole':6.99,'seeded-cut half':3.99,'mini-whole':4.99,'mini-cut half':2.99 },
+      },
+    ];
+
+    // ─────────────────────────────────────────────
+    // FILTER STATE
+    // ─────────────────────────────────────────────
+    const filterState = {
+      fruit:    '',
+      colors:   new Set(),
+      flavors:  new Set(),
+      textures: new Set(),
+      seasons:  new Set(),
+    };
+
+    // ─────────────────────────────────────────────
+    // VARIANT PANEL STATE
+    //
+    // Tracks what's currently selected in the open
+    // variant panel. Reset each time a card opens.
+    // ─────────────────────────────────────────────
+    const panelState = {
+      fruit:    null,   // the full fruit object
+      variant:  '',     // selected variant (color/type)
+      size:     '',     // selected size
+      qty:      1,
+    };
+
+    // ─────────────────────────────────────────────
+    // CART STATE
+    //
+    // An array of item snapshots. Each item is an
+    // independent copy of exactly what was selected
+    // at the moment of adding — not a reference to
+    // the fruit object, which could change.
+    // ─────────────────────────────────────────────
+    const cart = [];
+
+    // ─────────────────────────────────────────────
+    // DOM REFERENCES
+    // ─────────────────────────────────────────────
+    const fruitSelectEl = document.getElementById('fruit-select');
+    const listEl        = document.getElementById('fruit-list');
+    const metaEl        = document.getElementById('meta');
+    const emptyEl       = document.getElementById('empty');
+    const clearBtn      = document.getElementById('clear-btn');
+
+    const checkboxGroups = {
+      colors:   document.getElementById('filter-color'),
+      flavors:  document.getElementById('filter-flavor'),
+      textures: document.getElementById('filter-texture'),
+      seasons:  document.getElementById('filter-season'),
+    };
+
+    const variantOverlay  = document.getElementById('variant-overlay');
+    const panelClose      = document.getElementById('panel-close');
+    const panelEmoji      = document.getElementById('panel-emoji');
+    const panelTitle      = document.getElementById('panel-title');
+    const panelProducer   = document.getElementById('panel-producer');
+    const panelColors     = document.getElementById('panel-colors');
+    const panelSizes      = document.getElementById('panel-sizes');
+    const colorSection    = document.getElementById('color-section');
+    const qtyMinus        = document.getElementById('qty-minus');
+    const qtyPlus         = document.getElementById('qty-plus');
+    const qtyDisplay      = document.getElementById('qty-display');
+    const panelPrice      = document.getElementById('panel-price');
+    const panelPriceNote  = document.getElementById('panel-price-note');
+    const addToCartBtn    = document.getElementById('add-to-cart-btn');
+
+    const cartBtn         = document.getElementById('cart-btn');
+    const cartCount       = document.getElementById('cart-count');
+    const cartOverlay     = document.getElementById('cart-overlay');
+    const drawerClose     = document.getElementById('drawer-close');
+    const drawerItems     = document.getElementById('drawer-items');
+    const drawerTotal     = document.getElementById('drawer-total');
+    const checkoutBtn     = document.getElementById('checkout-btn');
+
+    // ─────────────────────────────────────────────
+    // FILTER PIPELINE (same two-stage approach)
+    // ─────────────────────────────────────────────
+    function getFruitPool() {
+      if (!filterState.fruit) return fruits;
+      return fruits.filter(f => f.name === filterState.fruit);
+    }
+
+    function getFilteredResults(pool) {
+      return pool.filter(fruit => {
+        if (filterState.colors.size   && !fruit.colors.some(v   => filterState.colors.has(v)))   return false;
+        if (filterState.flavors.size  && !fruit.flavors.some(v  => filterState.flavors.has(v)))  return false;
+        if (filterState.textures.size && !fruit.textures.some(v => filterState.textures.has(v))) return false;
+        if (filterState.seasons.size  && !fruit.seasons.some(v  => filterState.seasons.has(v)))  return false;
+        return true;
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FILTER RENDER
+    // ─────────────────────────────────────────────
+    function buildFruitDropdown() {
+      fruits.map(f => f.name).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        fruitSelectEl.appendChild(option);
+      });
+    }
+
+    function buildCheckboxes(pool, results) {
+      Object.entries(checkboxGroups).forEach(([category, container]) => {
+        const allValues = new Set();
+        pool.forEach(fruit => fruit[category].forEach(v => allValues.add(v)));
+        const sorted = [...allValues].sort();
+
+        container.innerHTML = '';
+
+        if (sorted.length === 0) {
+          container.innerHTML = '<span style="font-size:12px;color:var(--muted);">None available</span>';
+          return;
+        }
+
+        sorted.forEach(value => {
+          const count = results.filter(fruit => fruit[category].includes(value)).length;
+          const label = document.createElement('label');
+          label.className = 'checkbox-item' + (count === 0 ? ' disabled' : '');
+
+          const checkbox = document.createElement('input');
+          checkbox.type    = 'checkbox';
+          checkbox.value   = value;
+          checkbox.checked = filterState[category].has(value);
+
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) filterState[category].add(value);
+            else                  filterState[category].delete(value);
+            render();
+          });
+
+          const text = document.createElement('span');
+          text.textContent = value;
+
+          const countBadge = document.createElement('span');
+          countBadge.className   = 'checkbox-count';
+          countBadge.textContent = count;
+
+          label.appendChild(checkbox);
+          label.appendChild(text);
+          label.appendChild(countBadge);
+          container.appendChild(label);
+        });
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // CARD RENDER
+    //
+    // Note: no click listeners on individual cards.
+    // Instead, one delegated listener on listEl
+    // handles all clicks (see event listeners below).
+    //
+    // Each card carries its fruit name in a
+    // data-fruit-name attribute so the delegated
+    // handler knows which fruit was clicked.
+    // ─────────────────────────────────────────────
+    function renderCards(results) {
+      listEl.innerHTML = '';
+
+      if (results.length === 0) {
+        emptyEl.style.display = 'block';
+        metaEl.textContent = '';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      metaEl.textContent = results.length + ' of ' + fruits.length + ' fruits';
+
+      const activeValues = new Set([
+        ...filterState.colors,
+        ...filterState.flavors,
+        ...filterState.textures,
+        ...filterState.seasons,
+      ]);
+
+      results.forEach(fruit => {
+        const allTags = [...fruit.colors, ...fruit.flavors, ...fruit.textures, ...fruit.seasons];
+        const tagsHTML = allTags.map(tag =>
+          `<span class="tag${activeValues.has(tag) ? ' matched' : ''}">${tag}</span>`
+        ).join('');
+
+        const card = document.createElement('div');
+        card.className = 'fruit-card';
+
+        // data- attribute stores the fruit name on the element itself
+        // The click handler will read this to know what was clicked
+        card.dataset.fruitName = fruit.name;
+
+        card.innerHTML = `
+          <span class="emoji">${fruit.emoji}</span>
+          <div class="fruit-info">
+            <div class="fruit-name">${fruit.name}</div>
+            <div class="tags">${tagsHTML}</div>
+            <div class="card-hint">Click to configure</div>
+          </div>
+        `;
+
+        listEl.appendChild(card);
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // MASTER FILTER RENDER
+    // ─────────────────────────────────────────────
+    function render() {
+      const pool    = getFruitPool();
+      const results = getFilteredResults(pool);
+      buildCheckboxes(pool, results);
+      renderCards(results);
+    }
+
+    // ─────────────────────────────────────────────
+    // VARIANT PANEL
+    //
+    // openPanel() populates the panel from a fruit
+    // object and resets panelState for fresh config.
+    //
+    // updatePanel() is called any time a variant or
+    // size selection changes — it derives the current
+    // price from panelState and updates the UI.
+    // Nothing is stored until Add to Cart is clicked.
+    // ─────────────────────────────────────────────
+    function openPanel(fruit) {
+      panelState.fruit   = fruit;
+      panelState.variant = fruit.variants[0];    // default to first option
+      panelState.size    = fruit.sizes[0];       // default to first size
+      panelState.qty     = 1;
+
+      panelEmoji.textContent    = fruit.emoji;
+      panelTitle.textContent    = fruit.name;
+      panelProducer.textContent = fruit.producer;
+
+      // Build variant buttons
+      panelColors.innerHTML = '';
+      fruit.variants.forEach(v => {
+        const btn = document.createElement('button');
+        btn.className   = 'variant-btn' + (v === panelState.variant ? ' selected' : '');
+        btn.textContent = v;
+        btn.addEventListener('click', () => {
+          panelState.variant = v;
+          panelColors.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          updatePanel();
+        });
+        panelColors.appendChild(btn);
+      });
+
+      // Hide color section label if only one variant (no real choice)
+      colorSection.style.display = fruit.variants.length > 1 ? 'block' : 'none';
+
+      // Build size buttons
+      panelSizes.innerHTML = '';
+      fruit.sizes.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className   = 'variant-btn' + (s === panelState.size ? ' selected' : '');
+        btn.textContent = s;
+        btn.addEventListener('click', () => {
+          panelState.size = s;
+          panelSizes.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          updatePanel();
+        });
+        panelSizes.appendChild(btn);
+      });
+
+      qtyDisplay.textContent = '1';
+      updatePanel();
+      variantOverlay.classList.add('open');
+    }
+
+    function updatePanel() {
+      const { fruit, variant, size, qty } = panelState;
+
+      // Derive price from the pricing map using "variant-size" as the key
+      const key        = variant + '-' + size;
+      const unitPrice  = fruit.pricing[key] ?? 0;
+      const totalPrice = unitPrice * qty;
+
+      panelPrice.textContent     = '$' + totalPrice.toFixed(2);
+      panelPriceNote.textContent = '$' + unitPrice.toFixed(2) + ' per ' + size;
+    }
+
+    function closePanel() {
+      variantOverlay.classList.remove('open');
+    }
+
+    // ─────────────────────────────────────────────
+    // CART
+    // ─────────────────────────────────────────────
+    function addToCart() {
+      const { fruit, variant, size, qty } = panelState;
+      const key       = variant + '-' + size;
+      const unitPrice = fruit.pricing[key] ?? 0;
+
+      // Push a snapshot — not a reference to panelState
+      // so future selections don't overwrite this item
+      cart.push({
+        id:        Date.now(),          // unique id for removal
+        emoji:     fruit.emoji,
+        name:      fruit.name,
+        variant,
+        size,
+        qty,
+        unitPrice,
+        lineTotal: unitPrice * qty,
+      });
+
+      closePanel();
+      renderCart();
+      openCartDrawer();
+    }
+
+    function removeFromCart(id) {
+      const index = cart.findIndex(item => item.id === id);
+      if (index !== -1) cart.splice(index, 1);
+      renderCart();
+    }
+
+    function renderCart() {
+      // Update cart count badge in topbar
+      const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+      cartCount.textContent = totalItems;
+
+      // Render drawer items
+      if (cart.length === 0) {
+        drawerItems.innerHTML = '<div class="drawer-empty">Your cart is empty.</div>';
+        drawerTotal.textContent = '$0.00';
+        checkoutBtn.disabled = true;
+        return;
+      }
+
+      checkoutBtn.disabled = false;
+
+      drawerItems.innerHTML = '';
+      cart.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'cart-item';
+        row.innerHTML = `
+          <span class="cart-item-emoji">${item.emoji}</span>
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-variant">${item.variant} · ${item.size}</div>
+          </div>
+          <div class="cart-item-right">
+            <div class="cart-item-price">$${item.lineTotal.toFixed(2)}</div>
+            <div class="cart-item-qty">qty ${item.qty}</div>
+          </div>
+          <button class="cart-item-remove" aria-label="Remove ${item.name}">&#x2715;</button>
+        `;
+
+        // Remove button reads the item's id from closure
+        row.querySelector('.cart-item-remove').addEventListener('click', () => {
+          removeFromCart(item.id);
+        });
+
+        drawerItems.appendChild(row);
+      });
+
+      // Grand total — derived from cart array, never stored separately
+      const total = cart.reduce((sum, item) => sum + item.lineTotal, 0);
+      drawerTotal.textContent = '$' + total.toFixed(2);
+    }
+
+    function openCartDrawer()  { cartOverlay.classList.add('open'); }
+    function closeCartDrawer() { cartOverlay.classList.remove('open'); }
+
+    // ─────────────────────────────────────────────
+    // EVENT LISTENERS
+    // ─────────────────────────────────────────────
+
+    // Filter sidebar
+    fruitSelectEl.addEventListener('change', () => {
+      filterState.fruit = fruitSelectEl.value;
+      filterState.colors.clear();
+      filterState.flavors.clear();
+      filterState.textures.clear();
+      filterState.seasons.clear();
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      filterState.fruit = '';
+      filterState.colors.clear();
+      filterState.flavors.clear();
+      filterState.textures.clear();
+      filterState.seasons.clear();
+      fruitSelectEl.value = '';
+      render();
+    });
+
+    // Event delegation — one listener on the catalog
+    // catches clicks on any card, present or future
+    listEl.addEventListener('click', e => {
+      // Walk up from the clicked element to find the card
+      const card = e.target.closest('.fruit-card');
+      if (!card) return;
+
+      // Read the fruit name from the data- attribute
+      const fruitName = card.dataset.fruitName;
+      const fruit     = fruits.find(f => f.name === fruitName);
+      if (fruit) openPanel(fruit);
+    });
+
+    // Variant panel controls
+    panelClose.addEventListener('click', closePanel);
+    variantOverlay.addEventListener('click', e => {
+      if (e.target === variantOverlay) closePanel();
+    });
+
+    qtyMinus.addEventListener('click', () => {
+      if (panelState.qty > 1) {
+        panelState.qty--;
+        qtyDisplay.textContent = panelState.qty;
+        updatePanel();
+      }
+    });
+
+    qtyPlus.addEventListener('click', () => {
+      if (panelState.qty < 99) {
+        panelState.qty++;
+        qtyDisplay.textContent = panelState.qty;
+        updatePanel();
+      }
+    });
+
+    addToCartBtn.addEventListener('click', addToCart);
+
+    // Cart drawer
+    cartBtn.addEventListener('click', openCartDrawer);
+    drawerClose.addEventListener('click', closeCartDrawer);
+    cartOverlay.addEventListener('click', e => {
+      if (e.target === cartOverlay) closeCartDrawer();
+    });
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    buildFruitDropdown();
+    render();
+    renderCart();
+  </script>
+
+</body>
+</html>

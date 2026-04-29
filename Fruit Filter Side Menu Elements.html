@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fruit Market</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:             #f5f0e8;
+      --surface:        #fffdf8;
+      --border:         #ddd8ce;
+      --text:           #1a1714;
+      --muted:          #8a8278;
+      --accent:         #c84b2f;
+      --accent-bg:      #fdf0ed;
+      --tag-bg:         #edeae3;
+      --tag-text:       #5a5650;
+      --highlight-bg:   #ffe8b0;
+      --highlight-text: #7a4f00;
+      --radius:         10px;
+      --sidebar-w:      220px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      padding: 2rem 2rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .topbar h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .topbar p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Main layout ── */
+    .layout {
+      display: flex;
+      align-items: flex-start;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      position: sticky;
+      top: 2rem;
+    }
+
+    .filter-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Fruit dropdown */
+    #fruit-select {
+      width: 100%;
+      padding: 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238a8278' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 30px;
+      transition: border-color 0.15s;
+    }
+
+    #fruit-select:focus { border-color: var(--accent); }
+
+    /* Checkbox groups */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      opacity: 1;
+      transition: opacity 0.15s;
+    }
+
+    .checkbox-item.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checkbox-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--tag-bg);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    /* Clear button */
+    #clear-btn {
+      width: 100%;
+      padding: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    #clear-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    /* ── Catalog ── */
+    .catalog { flex: 1; min-width: 0; }
+
+    .catalog-meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      min-height: 18px;
+    }
+
+    #fruit-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .fruit-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: fadeIn 0.18s ease;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+
+    .fruit-card:hover {
+      border-color: #bbb6ae;
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .emoji {
+      font-size: 26px;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .fruit-info { min-width: 0; }
+
+    .fruit-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+    }
+
+    .tag.matched {
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    #empty {
+      display: none;
+      padding: 3rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    /* ── Divider between filter sections ── */
+    .filter-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <h1>Fruit Market</h1>
+    <p>Use the filters on the left to browse the catalog.</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+      <div class="filter-section">
+        <label class="filter-label" for="fruit-select">Fruit</label>
+        <select id="fruit-select">
+          <option value="">All fruits</option>
+        </select>
+      </div>
+
+      <hr class="filter-divider" />
+
+      <div class="filter-section">
+        <span class="filter-label">Color</span>
+        <div class="checkbox-group" id="filter-color"></div>
+      </div>
+
+      <hr class="filter-divider" />
+
+      <div class="filter-section">
+        <span class="filter-label">Flavor</span>
+        <div class="checkbox-group" id="filter-flavor"></div>
+      </div>
+
+      <hr class="filter-divider" />
+
+      <div class="filter-section">
+        <span class="filter-label">Texture</span>
+        <div class="checkbox-group" id="filter-texture"></div>
+      </div>
+
+      <hr class="filter-divider" />
+
+      <div class="filter-section">
+        <span class="filter-label">Season</span>
+        <div class="checkbox-group" id="filter-season"></div>
+      </div>
+
+      <button id="clear-btn">Clear all filters</button>
+
+    </aside>
+
+    <!-- ── Catalog ── -->
+    <main class="catalog">
+      <div class="catalog-meta" id="meta"></div>
+      <div id="fruit-list"></div>
+      <div id="empty">No fruits match your filters.</div>
+    </main>
+
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    // DATA
+    // Each fruit has named tag categories so we can
+    // filter and group them independently.
+    // ─────────────────────────────────────────────
+    const fruits = [
+      { name:'Apple',      emoji:'🍎', colors:['red','green'],         flavors:['sweet'],          textures:['crunchy'],        seasons:['fall'] },
+      { name:'Avocado',    emoji:'🥑', colors:['green'],               flavors:['savory','creamy'], textures:['creamy'],          seasons:['year-round'] },
+      { name:'Banana',     emoji:'🍌', colors:['yellow'],              flavors:['sweet'],           textures:['soft'],            seasons:['year-round'] },
+      { name:'Blueberry',  emoji:'🫐', colors:['blue','purple'],       flavors:['sweet','tangy'],   textures:['soft'],            seasons:['summer'] },
+      { name:'Cherry',     emoji:'🍒', colors:['red'],                 flavors:['sweet'],           textures:['firm'],            seasons:['summer'] },
+      { name:'Grape',      emoji:'🍇', colors:['purple','green','red'],flavors:['sweet','tangy'],   textures:['juicy'],           seasons:['fall'] },
+      { name:'Kiwi',       emoji:'🥝', colors:['green'],               flavors:['tangy','sweet'],   textures:['soft'],            seasons:['winter'] },
+      { name:'Lemon',      emoji:'🍋', colors:['yellow'],              flavors:['sour','citrus'],   textures:['firm'],            seasons:['year-round'] },
+      { name:'Mango',      emoji:'🥭', colors:['orange','yellow'],     flavors:['sweet'],           textures:['juicy','soft'],    seasons:['summer'] },
+      { name:'Orange',     emoji:'🍊', colors:['orange'],              flavors:['sweet','citrus'],  textures:['juicy'],           seasons:['winter'] },
+      { name:'Peach',      emoji:'🍑', colors:['orange','yellow'],     flavors:['sweet'],           textures:['soft','fuzzy'],    seasons:['summer'] },
+      { name:'Pear',       emoji:'🍐', colors:['green','yellow'],      flavors:['sweet','mild'],    textures:['soft','grainy'],   seasons:['fall'] },
+      { name:'Pineapple',  emoji:'🍍', colors:['yellow'],              flavors:['sweet','tangy'],   textures:['firm','juicy'],    seasons:['year-round'] },
+      { name:'Raspberry',  emoji:'🩷', colors:['red'],                 flavors:['tangy','sweet'],   textures:['soft','seedy'],    seasons:['summer'] },
+      { name:'Strawberry', emoji:'🍓', colors:['red'],                 flavors:['sweet','tangy'],   textures:['soft','juicy'],    seasons:['spring','summer'] },
+      { name:'Watermelon', emoji:'🍉', colors:['red','green'],         flavors:['sweet'],           textures:['juicy','crunchy'], seasons:['summer'] },
+    ];
+
+    // ─────────────────────────────────────────────
+    // STATE
+    // All active filter selections live here.
+    // ─────────────────────────────────────────────
+    const state = {
+      fruit:    '',        // selected fruit name, '' = all
+      colors:   new Set(),
+      flavors:  new Set(),
+      textures: new Set(),
+      seasons:  new Set(),
+    };
+
+    // ─────────────────────────────────────────────
+    // DOM REFERENCES
+    // ─────────────────────────────────────────────
+    const fruitSelectEl  = document.getElementById('fruit-select');
+    const listEl         = document.getElementById('fruit-list');
+    const metaEl         = document.getElementById('meta');
+    const emptyEl        = document.getElementById('empty');
+    const clearBtn       = document.getElementById('clear-btn');
+
+    const checkboxGroups = {
+      colors:   document.getElementById('filter-color'),
+      flavors:  document.getElementById('filter-flavor'),
+      textures: document.getElementById('filter-texture'),
+      seasons:  document.getElementById('filter-season'),
+    };
+
+    // ─────────────────────────────────────────────
+    // STEP 1 — FRUIT DROPDOWN
+    // Populate once from the full dataset.
+    // ─────────────────────────────────────────────
+    function buildFruitDropdown() {
+      fruits
+        .map(f => f.name)
+        .sort()
+        .forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          fruitSelectEl.appendChild(option);
+        });
+    }
+
+    // ─────────────────────────────────────────────
+    // STEP 2 — FILTER PIPELINE
+    //
+    // The pipeline has two stages:
+    //
+    //   Stage A — fruit-locked pool
+    //     Apply only the fruit dropdown. This is
+    //     the base pool for deriving available
+    //     checkbox options.
+    //
+    //   Stage B — fully filtered results
+    //     Apply all metadata checkboxes on top of
+    //     stage A. This is what gets rendered.
+    //
+    // Keeping these two stages separate is what
+    // makes dynamic checkbox options work correctly.
+    // ─────────────────────────────────────────────
+
+    // Stage A — pool after fruit selection only
+    function getFruitPool() {
+      if (!state.fruit) return fruits;
+      return fruits.filter(f => f.name === state.fruit);
+    }
+
+    // Stage B — pool after all filters
+    function getFilteredResults(pool) {
+      return pool.filter(fruit => {
+        // For each active category, the fruit must
+        // match AT LEAST ONE selected value (OR logic).
+        // Across categories it must satisfy ALL (AND logic).
+        if (state.colors.size   && !fruit.colors.some(v   => state.colors.has(v)))   return false;
+        if (state.flavors.size  && !fruit.flavors.some(v  => state.flavors.has(v)))  return false;
+        if (state.textures.size && !fruit.textures.some(v => state.textures.has(v))) return false;
+        if (state.seasons.size  && !fruit.seasons.some(v  => state.seasons.has(v)))  return false;
+        return true;
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // STEP 3 — DYNAMIC CHECKBOX OPTIONS
+    //
+    // Available options are derived from the
+    // fruit-locked pool (Stage A), NOT the full
+    // dataset. This prevents options from appearing
+    // that would produce zero results.
+    //
+    // The count shown next to each option reflects
+    // how many results that option would produce
+    // if added to the current selections.
+    // ─────────────────────────────────────────────
+    function buildCheckboxes(pool, results) {
+      Object.entries(checkboxGroups).forEach(([category, container]) => {
+        // Collect unique values present in the fruit pool
+        const allValues = new Set();
+        pool.forEach(fruit => fruit[category].forEach(v => allValues.add(v)));
+
+        // Sort alphabetically for consistency
+        const sorted = [...allValues].sort();
+
+        container.innerHTML = '';
+
+        if (sorted.length === 0) {
+          container.innerHTML = '<span style="font-size:12px;color:var(--muted);">None available</span>';
+          return;
+        }
+
+        sorted.forEach(value => {
+          // Count how many results currently show this value
+          const count = results.filter(fruit => fruit[category].includes(value)).length;
+
+          const label = document.createElement('label');
+          label.className = 'checkbox-item' + (count === 0 ? ' disabled' : '');
+
+          const checkbox = document.createElement('input');
+          checkbox.type    = 'checkbox';
+          checkbox.value   = value;
+          checkbox.checked = state[category].has(value);
+
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+              state[category].add(value);
+            } else {
+              state[category].delete(value);
+            }
+            render();
+          });
+
+          const text = document.createElement('span');
+          text.textContent = value;
+
+          const countBadge = document.createElement('span');
+          countBadge.className   = 'checkbox-count';
+          countBadge.textContent = count;
+
+          label.appendChild(checkbox);
+          label.appendChild(text);
+          label.appendChild(countBadge);
+          container.appendChild(label);
+        });
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // STEP 4 — RENDER FRUIT CARDS
+    // ─────────────────────────────────────────────
+    function renderCards(results) {
+      listEl.innerHTML = '';
+
+      if (results.length === 0) {
+        emptyEl.style.display = 'block';
+        metaEl.textContent = '';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      metaEl.textContent = results.length + ' of ' + fruits.length + ' fruits';
+
+      // Collect all active metadata values for tag highlighting
+      const activeValues = new Set([
+        ...state.colors,
+        ...state.flavors,
+        ...state.textures,
+        ...state.seasons,
+      ]);
+
+      results.forEach(fruit => {
+        // Flatten all tags into one array for display
+        const allTags = [
+          ...fruit.colors,
+          ...fruit.flavors,
+          ...fruit.textures,
+          ...fruit.seasons,
+        ];
+
+        const tagsHTML = allTags.map(tag => {
+          const isMatch = activeValues.has(tag);
+          return `<span class="tag${isMatch ? ' matched' : ''}">${tag}</span>`;
+        }).join('');
+
+        const card = document.createElement('div');
+        card.className = 'fruit-card';
+        card.innerHTML = `
+          <span class="emoji">${fruit.emoji}</span>
+          <div class="fruit-info">
+            <div class="fruit-name">${fruit.name}</div>
+            <div class="tags">${tagsHTML}</div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // MASTER RENDER
+    // Called any time state changes. Runs the full
+    // pipeline and updates everything on the page.
+    // ─────────────────────────────────────────────
+    function render() {
+      const pool    = getFruitPool();       // Stage A — fruit locked
+      const results = getFilteredResults(pool);  // Stage B — metadata filtered
+      buildCheckboxes(pool, results);       // Dynamic options from pool, counts from results
+      renderCards(results);                 // Cards from final results
+    }
+
+    // ─────────────────────────────────────────────
+    // EVENT LISTENERS
+    // ─────────────────────────────────────────────
+
+    // Fruit dropdown change
+    fruitSelectEl.addEventListener('change', () => {
+      state.fruit = fruitSelectEl.value;
+      // Clear metadata selections when switching fruit
+      // so you don't end up with impossible combinations
+      state.colors.clear();
+      state.flavors.clear();
+      state.textures.clear();
+      state.seasons.clear();
+      render();
+    });
+
+    // Clear all filters
+    clearBtn.addEventListener('click', () => {
+      state.fruit = '';
+      state.colors.clear();
+      state.flavors.clear();
+      state.textures.clear();
+      state.seasons.clear();
+      fruitSelectEl.value = '';
+      render();
+    });
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    buildFruitDropdown();
+    render();
+  </script>
+
+</body>
+</html>
